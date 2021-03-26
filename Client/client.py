@@ -18,62 +18,26 @@ class Okno(QMainWindow):
         self.titletext.setStyleSheet("QLabel { color: black; }")
 
         loginButton = QPushButton()
-        loginButton.setText("Sign in")
-        loginButton.clicked.connect(self.loginClicked)
+self.addressField = QLineEdit()
+        self.addressField.setPlaceholderText("IP Address")
 
-        registerButton = QPushButton()
-        registerButton.setText("Sign up")
-        registerButton.clicked.connect(self.registerClicked)
+        self.portField = QLineEdit()
+        self.portField.setPlaceholderText("Port Number")
+
+        self.nickField = QLineEdit()
+        self.nickField.setPlaceholderText("Nick")
+
+        confirmButton = QPushButton()
+        confirmButton.setText("Confirm")
+        confirmButton.clicked.connect(self.confirmButtonClicked)
 
         mainMenu = QVBoxLayout()
         mainMenu.setAlignment(Qt.AlignCenter)
         mainMenu.addWidget(self.titletext)
-        mainMenu.addWidget(loginButton)
-        mainMenu.addWidget(registerButton)
-
-
-        self.logintext = QLabel()
-        self.logintext.setText("Type in username and password")
-        self.logintext.setAlignment(Qt.AlignCenter)
-        self.logintext.setFont(QFont('Impact',32))
-        self.logintext.setStyleSheet("QLabel { color: black; }")
-
-        self.userNameLoginField = QLineEdit()
-        self.userNameLoginField.setPlaceholderText("Username")
-
-        self.passwordLoginField = QLineEdit()
-        self.passwordLoginField.setPlaceholderText("Password")
-
-        confirmLoginButton = QPushButton()
-        confirmLoginButton.setText("Confirm")
-        confirmLoginButton.clicked.connect(self.confirmLoginButtonClicked)
-
-        loginMenu = QVBoxLayout()
-        loginMenu.setAlignment(Qt.AlignCenter)
-        loginMenu.addWidget(self.logintext)
-        loginMenu.addWidget(self.userNameLoginField)
-        loginMenu.addWidget(self.passwordLoginField)
-        loginMenu.addWidget(confirmLoginButton)
-
-
-        self.registertext = QLabel()
-        self.registertext.setText("Type in username and password")
-        self.registertext.setAlignment(Qt.AlignCenter)
-        self.registertext.setFont(QFont('Impact',32))
-        self.registertext.setStyleSheet("QLabel { color: black; }")
-
-        self.userNameRegisterField = QLineEdit()
-        self.userNameRegisterField.setPlaceholderText("Username")
-
-        self.passwordRegisterField = QLineEdit()
-        self.passwordRegisterField.setPlaceholderText("Password")
-
-        self.passwordConfirmRegisterField = QLineEdit()
-        self.passwordConfirmRegisterField.setPlaceholderText("Confirm password")
-
-        confirmRegisterButton = QPushButton()
-        confirmRegisterButton.setText("Confirm")
-        confirmRegisterButton.clicked.connect(self.confirmRegisterButtonClicked)
+        mainMenu.addWidget(self.addressField)
+        mainMenu.addWidget(self.portField)
+        mainMenu.addWidget(self.nickField)
+        mainMenu.addWidget(confirmButton)
 
         registerMenu = QVBoxLayout()
         registerMenu.setAlignment(Qt.AlignCenter)
@@ -87,29 +51,11 @@ class Okno(QMainWindow):
         self.mainMenuW = QWidget()
         self.mainMenuW.setLayout(mainMenu)
 
-        self.loginMenuW = QWidget()
-        self.loginMenuW.setLayout(loginMenu)
-
-        self.registerMenuW = QWidget()
-        self.registerMenuW.setLayout(registerMenu)
-
-
 
         self.setCentralWidget(self.mainMenuW)
 
-    def loginClicked(self):
-        self.titletext.setText("Login clicked")
-        self.setCentralWidget(self.loginMenuW)
-
-    def registerClicked(self):
-        self.titletext.setText("Register clicked")
-        self.setCentralWidget(self.registerMenuW)
-
-    def confirmLoginButtonClicked(self):
-        self.setCentralWidget(self.mainMenuW)
-
-    def confirmRegisterButtonClicked(self):
-        self.setCentralWidget(self.mainMenuW)
+    def confirmButtonClicked(self):
+        self.titletext.setText("Confirmed")
     
 
 

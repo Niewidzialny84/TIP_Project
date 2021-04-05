@@ -8,7 +8,7 @@ class Server:
         #This should make run socket on all interfaces
         #self.ip = ""
         self.port = 9999
-        self.running = False
+        self.running = True
 
         try:
             #Binding adress and settings to socket
@@ -28,7 +28,7 @@ class Server:
         #Awating loop for connections
         while self.running:
             connection, address = self.sock.accept()
-            self.connections.append(c)
+            self.connections.append(connection)
             #Creating new thread for every client
             threading.Thread(target=self.handle,args=(connection,address)).start()
         
@@ -42,7 +42,7 @@ class Server:
             except socket.error:
                 #Close connection on fail and remove from connections list
                 connection.close()
-                connections.remove(connection)
+                self.connections.remove(connection)
 
     def send(self,connection,data):
         #Broadcast send to all connected users except the sender

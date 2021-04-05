@@ -18,7 +18,7 @@ class Okno(QMainWindow):
         self.titletext.setStyleSheet("QLabel { color: black; }")
 
         loginButton = QPushButton()
-self.addressField = QLineEdit()
+        self.addressField = QLineEdit()
         self.addressField.setPlaceholderText("IP Address")
 
         self.portField = QLineEdit()
@@ -38,14 +38,6 @@ self.addressField = QLineEdit()
         mainMenu.addWidget(self.portField)
         mainMenu.addWidget(self.nickField)
         mainMenu.addWidget(confirmButton)
-
-        registerMenu = QVBoxLayout()
-        registerMenu.setAlignment(Qt.AlignCenter)
-        registerMenu.addWidget(self.registertext)
-        registerMenu.addWidget(self.userNameRegisterField)
-        registerMenu.addWidget(self.passwordRegisterField)
-        registerMenu.addWidget(self.passwordConfirmRegisterField)
-        registerMenu.addWidget(confirmRegisterButton)
 
         
         self.mainMenuW = QWidget()

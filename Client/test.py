@@ -6,7 +6,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import *
 import socket
 
-host = '192.168.1.41'  # The server's hostname or IP address
+host = '192.168.56.1'  # The server's hostname or IP address
 port = 9999        # The port used by the server
 buffer_size = 1024
 
@@ -18,6 +18,15 @@ seconds = 3
 filename = "output.wav"
 
 p = pyaudio.PyAudio()  # Create an interface to PortAudio
+
+text = "Hello, World!"
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((host, port))
+text = text.encode('utf-8')
+s.send(text)
+data = s.recv(buffer_size)
+s.close()
+print("received data:", data)
 
 while True:
     if keyboard.is_pressed('r'):
@@ -51,15 +60,6 @@ while True:
         wf.setframerate(fs)
         wf.writeframes(b''.join(frames))
         wf.close()
-
-        text = "Hello, World!"
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((host, port))
-        text = text.encode('utf-8')
-        s.send(text)
-        data = s.recv(buffer_size)
-        s.close()
-        print("received data:", data)
 
     elif keyboard.is_pressed('p'):
         print('Playing')

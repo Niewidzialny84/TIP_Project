@@ -6,7 +6,7 @@ class Server:
         #This should get ip address of the card
         self.ip = socket.gethostbyname(socket.gethostname())
         #This should make run socket on all interfaces
-        #self.ip = ""
+        self.ip = ""
         self.port = 9999
         self.running = True
 
@@ -42,14 +42,14 @@ class Server:
             except socket.error:
                 #Close connection on fail and remove from connections list
                 connection.close()
-                self.connections.remove(connection)
+                # self.connections.remove(connection)
 
     def send(self,connection,data):
         #Broadcast send to all connected users except the sender
         for user in self.connections:
             if user != self.sock and user != connection:
                 try:
-                    client.send(data)
+                    user.send(data)
                 except:
                     pass
 

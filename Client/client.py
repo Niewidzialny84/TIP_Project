@@ -1,61 +1,58 @@
+import socket
+import threading
+import pyaudio
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
+from okno import *
 
-import traceback, sys, random, string
+class Client:
+    def __init__(self):
 
-class Okno(QMainWindow):
-    def __init__(self,*args,**kwargs):
-        super(Okno,self).__init__(*args,**kwargs) 
-        self.setWindowTitle("TIP Communicator")
-        self.setFixedWidth(800)
-        self.setFixedHeight(600)
-
-        self.titletext = QLabel()
-        self.titletext.setText("Welcome in TIP Communicator")
-        self.titletext.setAlignment(Qt.AlignCenter)
-        self.titletext.setFont(QFont('Impact',32))
-        self.titletext.setStyleSheet("QLabel { color: black; }")
-
-        loginButton = QPushButton()
-        self.addressField = QLineEdit()
-        self.addressField.setPlaceholderText("IP Address")
-
-        self.portField = QLineEdit()
-        self.portField.setPlaceholderText("Port Number")
-
-        self.nickField = QLineEdit()
-        self.nickField.setPlaceholderText("Nick")
-
-        confirmButton = QPushButton()
-        confirmButton.setText("Confirm")
-        confirmButton.clicked.connect(self.confirmButtonClicked)
-
-        mainMenu = QVBoxLayout()
-        mainMenu.setAlignment(Qt.AlignCenter)
-        mainMenu.addWidget(self.titletext)
-        mainMenu.addWidget(self.addressField)
-        mainMenu.addWidget(self.portField)
-        mainMenu.addWidget(self.nickField)
-        mainMenu.addWidget(confirmButton)
-
+        self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         
-        self.mainMenuW = QWidget()
-        self.mainMenuW.setLayout(mainMenu)
+        while 1:
+            try:
+                self.target_ip = input('Enter IP address of server --> ')
+                self.target_port = int(input('Enter target port of server --> '))
+
+                self.s.connect((self.target_ip, self.target_port))
+
+                break
+            except:
+                print("Couldn't connect to server")
+
+        chunk_size = 1024 # 512
+        audio_format = pyaudio.paInt16
+        channels = 1
+        rate = 20000
+
+        # initialise microphone recording
+        self.p = pyaudio.PyAudio()
+        self.playing_stream = self.p.open(format=audio_format, channels=channels, rate=rate, output=True, frames_per_buffer=chunk_size)
+        self.recording_stream = self.p.open(format=audio_format, channels=channels, rate=rate, input=True, frames_per_buffer=chunk_size)
+        
+        print("Connected to Server")
+
+        # start threads
+        receive_thread = threading.Thread(target=self.receive_server_data).start()
+        self.send_data_to_server()
+
+    def receive_server_data(self):
+        while True:
+            try:
+                data = self.s.recv(1024)
+                self.playing_stream.write(data)
+            except:
+                pass
 
 
-        self.setCentralWidget(self.mainMenuW)
+    def send_data_to_server(self):
+        while True:
+            try:
+                data = self.recording_stream.read(1024)
+                self.s.sendall(data)
+            except:
+                pass
 
-    def confirmButtonClicked(self):
-        self.titletext.setText("Confirmed")
-    
-
-
-app = QApplication(sys.argv)
-
-window = Okno()
-#window.setFixedSize(800,600)
-window.setStyleSheet("background-color: rgb(245,245,220);")
-window.show()
-
-app.exec_()
+client = Client()

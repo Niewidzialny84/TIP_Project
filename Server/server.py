@@ -5,6 +5,11 @@ import time
 import datetime
 import pytz
 
+#custom utils package import
+import sys , os
+sys.path.append(os.getcwd())
+from Utils.packer import a
+
 class Server:
     def __init__(self,port):
         #This should get ip address of the card

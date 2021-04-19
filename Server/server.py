@@ -25,7 +25,8 @@ class ConnectedUser(object):
         self.connected = False
         ConnectedUser.current_id -= 1
 
-
+    def __repr__(self):
+        return 'ID='+str(self.id)+' ADDR='+str(self.address)+' NAME='+str(self.name)+' STATUS='+str(self.connected)
 
 class Server(object):
     def __init__(self,port):
@@ -82,7 +83,7 @@ class Server(object):
                 #Close connection on fail and remove from connections list
                 user.socket.close()
                 user.disconnected()
-                self.log(str(user.address) + 'disconnected')
+                self.log(str(user.address) + ' disconnected')
                 self.connections.remove(user)
 
     def send(self,connection,data):
@@ -119,9 +120,13 @@ class ConsoleApp(object):
 
     def run(self):
         while(True):
-            val = str(input())
-            if val.upper() == 'STOP':
+            val = str(input()).upper()
+            if val == 'STOP':
                 self.server.log('Stopping server...')
                 self.server.stop()
                 break
-                
+            elif val == 'LIST':
+                self.server.log('Getting current user list')
+                for user in self.server.connections:
+                    print(user) 
+            

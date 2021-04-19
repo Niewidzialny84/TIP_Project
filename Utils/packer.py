@@ -20,6 +20,6 @@ class Packer(object):
         return 1
 
 class Secure(object):
-    self.key = 'password'
+    key = 'password'
 
 

@@ -8,9 +8,26 @@ import pytz
 #custom utils package import
 import sys , os
 sys.path.append(os.getcwd())
-from Utils.packer import a
+from Utils.packer import *
 
-class Server:
+class ConnectedUser(object):
+    current_id = 0
+
+    def __init__(self, socket, address):
+      self.socket = socket
+      self.address = address
+      self.id = ConnectedUser.current_id
+      self.connected = True
+      ConnectedUser.current_id += 1
+      self.name = None
+    
+    def disconnected(self):
+        self.connected = False
+        ConnectedUser.current_id -= 1
+
+
+
+class Server(object):
     def __init__(self,port):
         #This should get ip address of the card
         #self.ip = socket.gethostbyname(socket.gethostname())
@@ -42,37 +59,38 @@ class Server:
             self.log('Awaiting more connections...')
             try: 
                 connection, address = self.sock.accept()
+
                 self.log(str(address) + ' connected')
-                self.connections.append(connection)
+                user = ConnectedUser(connection,address)
+                self.connections.append(user)
                 #Creating new thread for every client
-                threading.Thread(target=self.handle,args=(connection,address)).start()
+                threading.Thread(target=self.handle,args=(user,)).start()
             except WindowsError:
                 pass
             except Exception as err:
                 self.log('Some error occured ' + str(err))
                 pass
 
-    def handle(self,connection,address):
-        loop = False
-        while self.running and not loop:
+    def handle(self, user: ConnectedUser):
+        while self.running and user.connected:
             try:
                 #Data handling
                 #FIXME: Add more info into packets and split incoming data
-                data = connection.recv(1024)
-                self.send(connection,data)
+                data = user.socket.recv(1024)
+                self.send(user.socket,data)
             except socket.error:
                 #Close connection on fail and remove from connections list
-                connection.close()
-                self.log(str(connection))
-                loop = True
-                # self.connections.remove(connection)
+                user.socket.close()
+                user.disconnected()
+                self.log(str(user.address) + 'disconnected')
+                self.connections.remove(user)
 
     def send(self,connection,data):
         #Broadcast send to all connected users except the sender
         for user in self.connections:
-            if user != self.sock and user != connection:
+            if user.socket != self.sock and user.socket != connection:
                 try:
-                    user.send(data)
+                    user.socket.send(data)
                 except:
                     pass
 
@@ -85,7 +103,7 @@ class Server:
         self.running = False
         self.sock.close()
 
-class ConsoleApp:
+class ConsoleApp(object):
     def __init__(self, port: int):
         #self.ipaddr = ipaddr
         self.port = port

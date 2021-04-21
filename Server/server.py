@@ -21,7 +21,7 @@ class ConnectedUser(object):
         
         #Assign Unique Identifier
         self.id = None
-        
+
         for i in range(1000):
             if not ConnectedUser.current_ids.issuperset(set([i])):
                 self.id = i
@@ -87,13 +87,19 @@ class Server(object):
                 #Data handling
                 #FIXME: Add more info into packets and split incoming data
                 data = user.socket.recv(1024)
-                self.send(user.socket,data)
+                self.sendBroadcast(user.socket,data)
             except socket.error:
                 #Close connection on fail and remove from connections list
                 user.socket.close()
                 user.disconnected()
                 self.log(str(user.address) + ' disconnected')
                 self.connections.remove(user)
+
+    def send(self,connection,data):
+        try:
+            connection.send(data)
+        except:
+            pass
 
     def sendAll(self,data):
         for user in self.connections:
@@ -102,7 +108,7 @@ class Server(object):
             except:
                 pass
 
-    def send(self,connection,data):
+    def sendBroadcast(self,connection,data):
         #Broadcast send to all connected users except the sender
         for user in self.connections:
             if user.socket != self.sock and user.socket != connection:

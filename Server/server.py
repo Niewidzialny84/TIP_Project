@@ -11,19 +11,27 @@ sys.path.append(os.getcwd())
 from Utils.packer import *
 
 class ConnectedUser(object):
-    current_id = 0
+    current_ids = set()
 
     def __init__(self, socket, address):
-      self.socket = socket
-      self.address = address
-      self.id = ConnectedUser.current_id
-      self.connected = True
-      ConnectedUser.current_id += 1
-      self.name = None
+        self.socket = socket
+        self.address = address
+        self.connected = True
+        self.name = None
+        
+        #Assign Unique Identifier
+        self.id = None
+        
+        for i in range(1000):
+            if not ConnectedUser.current_ids.issuperset(set([i])):
+                self.id = i
+                ConnectedUser.current_ids.add(i)
+                break
     
     def disconnected(self):
         self.connected = False
-        ConnectedUser.current_id -= 1
+        #Free the id
+        ConnectedUser.current_ids.remove(self.id)
 
     def __repr__(self):
         return 'ID='+str(self.id)+' ADDR='+str(self.address)+' NAME='+str(self.name)+' STATUS='+str(self.connected)
@@ -32,6 +40,7 @@ class Server(object):
     def __init__(self,port):
         #This should get ip address of the card
         #self.ip = socket.gethostbyname(socket.gethostname())
+
         #This should make run socket on all interfaces
         self.ip = ""
         self.port = port
@@ -85,6 +94,13 @@ class Server(object):
                 user.disconnected()
                 self.log(str(user.address) + ' disconnected')
                 self.connections.remove(user)
+
+    def sendAll(self,data):
+        for user in self.connections:
+            try:
+                user.socket.send(data)
+            except:
+                pass
 
     def send(self,connection,data):
         #Broadcast send to all connected users except the sender

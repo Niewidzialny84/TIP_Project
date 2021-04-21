@@ -34,7 +34,6 @@ class Packer(object):
             package = {'KEY':key.value,'REASON': reason}
 
         package = json.dumps(package)
-        package = package.ljust(1024-len(package))
         return package.encode(encoding='ASCII')
 
 

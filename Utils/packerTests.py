@@ -18,14 +18,14 @@ class PackerTests(unittest.TestCase):
 
     def test_NamePacket(self):
         p = Packer.pack(Response.SEND_NICKNAME, name='Adam')
-        self.assertEqual(p, b'{"KEY": 2, "NAME": "Adam"}'.ljust(1024-26))
+        self.assertEqual(p, b'{"KEY": 2, "NAME": "Adam"}')
         key, data = Packer.unpack(p)
         self.assertEqual(key, Response.SEND_NICKNAME)
         self.assertEqual(data['NAME'], 'Adam')
 
     def test_NewUsersPacket(self):
         p = Packer.pack(Response.SEND_NEW_USERS, users=['Adam','Julie','George'])
-        self.assertEqual(p, b'{"KEY": 3, "USERS": ["Adam", "Julie", "George"]}'.ljust(1024-48))
+        self.assertEqual(p, b'{"KEY": 3, "USERS": ["Adam", "Julie", "George"]}')
         key, data = Packer.unpack(p)
         self.assertEqual(key, Response.SEND_NEW_USERS)
         self.assertEqual(data['USERS'], ['Adam','Julie','George'])
@@ -47,7 +47,6 @@ class PackerTests(unittest.TestCase):
 
             clientsock.close()
         except Exception as err:
-            print(str(err))
             self.skipTest('Server is offline')
         pass
 

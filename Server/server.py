@@ -87,13 +87,23 @@ class Server(object):
                 #Data handling
                 #FIXME: Add more info into packets and split incoming data
                 data = user.socket.recv(1024)
-                self.sendBroadcast(user.socket,data)
+
+                key , data = Packer.unpack(data)
+                if key == Response.SEND_NICKNAME:
+                    user.name = data['NAME']
+                    self.sendAll(Packer.pack(Response.SEND_NEW_USERS,users=self.userList()))
+                elif key == Response.DISCONNECT:
+                    raise socket.error('User disconnected')
+                else:
+                    self.sendBroadcast(user.socket,data)
             except socket.error:
                 #Close connection on fail and remove from connections list
                 user.socket.close()
                 user.disconnected()
                 self.log(str(user.address) + ' disconnected')
                 self.connections.remove(user)
+                
+                self.sendAll(Packer.pack(Response.SEND_NEW_USERS,users=self.userList()))
 
     def send(self,connection,data):
         try:
@@ -107,7 +117,7 @@ class Server(object):
                 user.socket.send(data)
             except:
                 pass
-
+    
     def sendBroadcast(self,connection,data):
         #Broadcast send to all connected users except the sender
         for user in self.connections:
@@ -116,6 +126,12 @@ class Server(object):
                     user.socket.send(data)
                 except:
                     pass
+    
+    def userList(self):
+        l = []
+        for user in self.connections:
+            l.append(user.name)
+        return l
 
     def log(self, message: str):
         #Console logging on time

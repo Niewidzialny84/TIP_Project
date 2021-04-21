@@ -6,6 +6,8 @@ class Response(Enum):
     UNKNOWN_ERROR = 1
     SEND_NICKNAME = 2
     SEND_NEW_USERS = 3
+    DISCONNECT = 4
+    SERVER_CLOSE = 5
 
 
 class Packer(object):
@@ -27,8 +29,13 @@ class Packer(object):
                 package = {'KEY':key.value,'USERS':users}
             else:
                 raise TypeError('--Pack-- Users were missing')
+        elif key == Response.DISCONNECT:
+            reason = kwargs.get('reason',None)
+            package = {'KEY':key.value,'REASON': reason}
 
-        return json.dumps(package).encode(encoding='ASCII')
+        package = json.dumps(package)
+        package = package.ljust(1024-len(package))
+        return package.encode(encoding='ASCII')
 
 
     @staticmethod

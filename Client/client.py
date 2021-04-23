@@ -10,7 +10,8 @@ import pyaudio
 import tkinter as tk
 from tkinter import messagebox
 from PyQt5.QtCore import QObject, QThread, pyqtSignal
-
+sys.path.append(os.getcwd())
+from Utils.packer import *
 import traceback, sys, random, string
 
 messageBox = tk.Tk()
@@ -25,7 +26,11 @@ class invalidNick(Error):
     pass
 
 class Client:
-    def __init__(self, ipFromClient, portFromClient):
+    def __init__(self, ipFromClient, portFromClient, nick):
+        
+        self.running = True
+
+        self.mute = True
 
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         
@@ -37,10 +42,11 @@ class Client:
                 self.target_port = portFromClient
 
                 self.s.connect((self.target_ip, self.target_port))
-
                 break
             except:
                 print("Couldn't connect to server")
+        
+        self.nick = nick
 
         chunk_size = 1024
         audio_format = pyaudio.paInt16
@@ -57,26 +63,37 @@ class Client:
         # self.send_data_to_server()
         self.send_thread = threading.Thread(target=self.send_data_to_server).start()
 
-        self.mute = True
-
     def receive_server_data(self):
-        while True:
+        self.s.send(Packer.pack(Response.SEND_NICKNAME, name=self.nick))
+        while self.running:
             try:
-                data = self.s.recv(1024)
-                self.playing_stream.write(data)
-            except:
+                key, data = Packer.unpack(self.s.recv(1024))
+                if key == Response.SEND_NEW_USERS:
+                    window.userList.clear()
+                    for us in data["USERS"]:
+                        window.userList.addItem(us)
+                else:
+                    self.playing_stream.write(data)
+            except Exception as ex:
+                print(ex)
                 pass
 
 
     def send_data_to_server(self):
         # while self.mute:
-        while True:
+        while self.running:
             try:
+                # if self.mute:
                 data = self.recording_stream.read(1024)
-                self.s.sendall(data)
-            except:
+                self.s.send(data)
+            except Exception as ex:
+                print(ex)
                 pass
 
+    def disconnect(self):
+        self.s.send(Packer.pack(Response.DISCONNECT, reason = "Quit"))
+        self.running = False
+        
 class Window(QMainWindow):
     def __init__(self,*args,**kwargs):
         super(Window,self).__init__(*args,**kwargs) 
@@ -147,9 +164,12 @@ class Window(QMainWindow):
                 self.nickName.setFont(QFont('Impact',32))
                 colorText = QColor('#05d9e8')
                 self.nickName.setStyleSheet("QLabel { color: colorText; }")
-                self.userList.addItem(self.nickField.text())
+                # self.userList.addItem(self.nickField.text())
 
-                self.client = Client(self.addressField.text(), int(self.portField.text()))
+                self.client = Client(self.addressField.text(), int(self.portField.text()), self.nickField.text())
+
+                # users = self.client.returnList()
+                # print(users)
             else:
                 raise invalidNick
         except invalidNick:
@@ -161,12 +181,21 @@ class Window(QMainWindow):
 
     def muteButtonClicked(self):
         if self.muteButton.text() == "Mute":
-            # self.client.mute = False
+            self.client.mute = False
             self.muteButton.setText("Unmute")
         else:
             # self.client.send_thread.start()
-            # self.client.mute = True
+            self.client.mute = True
             self.muteButton.setText("Mute")
+        
+    def closeEvent(self, event):
+        close = QMessageBox.question(self, "QUIT", "Are you sure want to stop process?", QMessageBox.Yes | QMessageBox.No)
+        if close == QMessageBox.Yes:
+            event.accept()
+            if self.client != None:
+                self.client.disconnect()
+        else:
+            event.ignore()
 
 
     

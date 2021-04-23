@@ -29,7 +29,7 @@ class Client:
     def __init__(self, ipFromClient, portFromClient, nick):
         
         self.running = True
-
+        self.nick = nick
         self.mute = True
 
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -42,11 +42,18 @@ class Client:
                 self.target_port = portFromClient
 
                 self.s.connect((self.target_ip, self.target_port))
+                self.s.send(Packer.pack(Response.SEND_NICKNAME, name=self.nick))
+                key, data = Packer.unpack(self.s.recv(1024))
+                if key == Response.SEND_NEW_USERS:
+                    print('----HALO')
+                    window.userList.clear()
+                    for us in data["USERS"]:
+                        print(us)
+                        window.userList.addItem(us)
                 break
             except:
                 print("Couldn't connect to server")
         
-        self.nick = nick
 
         chunk_size = 1024
         audio_format = pyaudio.paInt16
@@ -64,7 +71,6 @@ class Client:
         self.send_thread = threading.Thread(target=self.send_data_to_server).start()
 
     def receive_server_data(self):
-        self.s.send(Packer.pack(Response.SEND_NICKNAME, name=self.nick))
         while self.running:
             try:
                 key, data = Packer.unpack(self.s.recv(1024))
@@ -157,7 +163,7 @@ class Window(QMainWindow):
 
     def confirmButtonClicked(self):
         try:
-            if self.nickField.text().isascii() and len(self.nickField.text()) <= 20:
+            if len(self.nickField.text()) <= 20:
                 self.setCentralWidget(self.secondMenuW)
                 self.nickName.setText("Welcome " + self.nickField.text())
                 self.nickName.setAlignment(Qt.AlignCenter)
@@ -176,7 +182,7 @@ class Window(QMainWindow):
             self.titletext.setText("Invalid nick")
             messagebox.showinfo("Error", "Nick must be shorter than 20 characters and must consist of ASCII signs")
             # tk.messagebox.showinfo("Error", "Nick must be shorter than 20 characters and must consist of ASCII signs")
-        except:
+        except Exception as ex:
             self.titletext.setText("Error with connection")
 
     def muteButtonClicked(self):

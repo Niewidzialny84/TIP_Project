@@ -8,6 +8,7 @@ import os
 import sys
 import pyaudio
 import tkinter as tk
+<<<<<<< HEAD
 from tkinter import messagebox
 from PyQt5.QtCore import QObject, QThread, pyqtSignal
 
@@ -23,11 +24,17 @@ class Error(Exception):
 class invalidNick(Error):
     """Invalid Nick"""
     pass
+=======
+from PyQt5.QtCore import QObject, QThread, pyqtSignal
+
+import traceback, sys, random, string
+>>>>>>> origin/Server/N
 
 class Client:
     def __init__(self, ipFromClient, portFromClient):
 
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.r = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         
         while 1:
             try:
@@ -37,6 +44,7 @@ class Client:
                 self.target_port = portFromClient
 
                 self.s.connect((self.target_ip, self.target_port))
+                self.r.connect((self.target_ip, self.target_port))
 
                 break
             except:
@@ -69,17 +77,27 @@ class Client:
 
 
     def send_data_to_server(self):
+<<<<<<< HEAD
         # while self.mute:
         while True:
+=======
+        while self.mute:
+>>>>>>> origin/Server/N
             try:
                 data = self.recording_stream.read(1024)
                 self.s.sendall(data)
             except:
                 pass
 
+<<<<<<< HEAD
 class Window(QMainWindow):
     def __init__(self,*args,**kwargs):
         super(Window,self).__init__(*args,**kwargs) 
+=======
+class Okno(QMainWindow):
+    def __init__(self,*args,**kwargs):
+        super(Okno,self).__init__(*args,**kwargs) 
+>>>>>>> origin/Server/N
         self.setWindowTitle("TIP Communicator")
         self.setFixedWidth(800)
         self.setFixedHeight(600)
@@ -140,6 +158,7 @@ class Window(QMainWindow):
 
     def confirmButtonClicked(self):
         try:
+<<<<<<< HEAD
             if self.nickField.text().isascii() and len(self.nickField.text()) <= 20:
                 self.setCentralWidget(self.secondMenuW)
                 self.nickName.setText("Welcome " + self.nickField.text())
@@ -156,6 +175,17 @@ class Window(QMainWindow):
             self.titletext.setText("Invalid nick")
             messagebox.showinfo("Error", "Nick must be shorter than 20 characters and must consist of ASCII signs")
             # tk.messagebox.showinfo("Error", "Nick must be shorter than 20 characters and must consist of ASCII signs")
+=======
+            self.setCentralWidget(self.secondMenuW)
+            self.nickName.setText("Welcome " + self.nickField.text())
+            self.nickName.setAlignment(Qt.AlignCenter)
+            self.nickName.setFont(QFont('Impact',32))
+            colorText = QColor('#05d9e8')
+            self.nickName.setStyleSheet("QLabel { color: colorText; }")
+            self.userList.addItem(self.nickField.text())
+
+            self.client = Client(self.addressField.text(), int(self.portField.text()))
+>>>>>>> origin/Server/N
         except:
             self.titletext.setText("Error with connection")
 
@@ -172,8 +202,16 @@ class Window(QMainWindow):
     
 app = QApplication(sys.argv)
 
+<<<<<<< HEAD
 window = Window()
 window.setStyleSheet("background-color: rgb(245,245,220);")
 window.show()
 
 app.exec_()
+=======
+window = Okno()
+window.setStyleSheet("background-color: rgb(245,245,220);")
+window.show()
+
+app.exec_()
+>>>>>>> origin/Server/N

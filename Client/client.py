@@ -69,7 +69,7 @@ class Client:
 
 
     def send_data_to_server(self):
-#         while self.mute:
+        # while self.mute:
         while True:
             try:
                 data = self.recording_stream.read(1024)
@@ -77,9 +77,9 @@ class Client:
             except:
                 pass
 
-class Okno(QMainWindow):
+class Window(QMainWindow):
     def __init__(self,*args,**kwargs):
-        super(Okno,self).__init__(*args,**kwargs) 
+        super(Window,self).__init__(*args,**kwargs) 
         self.setWindowTitle("TIP Communicator")
         self.setFixedWidth(800)
         self.setFixedHeight(600)
@@ -172,7 +172,7 @@ class Okno(QMainWindow):
     
 app = QApplication(sys.argv)
 
-window = Okno()
+window = Window()
 window.setStyleSheet("background-color: rgb(245,245,220);")
 window.show()
 

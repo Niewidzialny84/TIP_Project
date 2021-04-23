@@ -28,7 +28,6 @@ class Client:
     def __init__(self, ipFromClient, portFromClient):
 
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.r = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         
         while 1:
             try:
@@ -38,7 +37,6 @@ class Client:
                 self.target_port = portFromClient
 
                 self.s.connect((self.target_ip, self.target_port))
-                self.r.connect((self.target_ip, self.target_port))
 
                 break
             except:

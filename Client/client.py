@@ -163,7 +163,7 @@ class Window(QMainWindow):
 
     def confirmButtonClicked(self):
         try:
-            if len(self.nickField.text()) <= 20:
+            if len(self.nickField.text()) <= 20 and self.nickField.text().isascii() == True:
                 self.setCentralWidget(self.secondMenuW)
                 self.nickName.setText("Welcome " + self.nickField.text())
                 self.nickName.setAlignment(Qt.AlignCenter)

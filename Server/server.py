@@ -10,6 +10,8 @@ import sys , os
 sys.path.append(os.getcwd())
 from Utils.packer import *
 
+import re
+
 class ConnectedUser(object):
     current_ids = set()
 
@@ -37,7 +39,7 @@ class ConnectedUser(object):
         ConnectedUser.current_ids.remove(self.id)
 
     def __repr__(self):
-        return 'ID='+str(self.id)+' ADDR='+str(self.address)+' NAME='+str(self.name)+' STATUS='+str(self.connected)
+        return 'ID='+str(self.id)+' ADDR='+str(self.address)+' NAME='+str(self.name)+' STATUS='+str(self.connected)+ ' UDP='+str(self.UDP)
 
 class Server(object):
     def __init__(self,port):
@@ -86,7 +88,8 @@ class Server(object):
                 self.connections.append(user)
                 #Creating new thread for every client
                 threading.Thread(target=self.handleTCP,args=(user,)).start()
-            except WindowsError:
+            except WindowsError as err:
+                self.log('WinErr' + str(err))
                 pass
             except Exception as err:
                 self.log('Some error occured ' + str(err))
@@ -98,23 +101,26 @@ class Server(object):
         while self.running and user.connected:
             try:
                 #recive data
-                data = user.socket.recv(1024)
+                recv = user.socket.recv(1024)
+                #print(data)
 
-                #parse data
-                key , data = Packer.unpack(data)
+                #FIXME: Multiple packets in one
+                p = re.compile(r'(?<=\})(?=\{)')
+                slices = re.split(p, recv)
+                for x in slices:
+                    #parse data
+                    key , data = Packer.unpack(data)
 
-                #Nickname handling
-                if key == Response.SEND_NICKNAME:
-                    user.name = data['NAME']
-                    self.sendAll(Packer.pack(Response.SEND_NEW_USERS,users=self.userList()))
-                    self.send(user.socket,Packer.pack(Response.SESSION,session=user.id))
-                #Client disconnect packet handling
-                elif key == Response.DISCONNECT:
-                    raise socket.error('User disconnected')
-                elif key == Response.CLIENT_PORT:
-                    user.UDP = (user.socket.getsockname()[0],data['PORT'])
-                else:
-                    self.sendBroadcast(user.socket,data)
+                    #Nickname handling
+                    if key == Response.SEND_NICKNAME:
+                        user.name = data['NAME']
+                        self.sendAll(Packer.pack(Response.SEND_NEW_USERS,users=self.userList()))
+                        self.send(user.socket,Packer.pack(Response.SESSION,session=user.id))
+                    #Client disconnect packet handling
+                    elif key == Response.DISCONNECT:
+                        raise socket.error('User disconnected')
+                    elif key == Response.CLIENT_PORT:
+                        user.UDP = (user.socket.getsockname()[0],data['PORT'])
             except socket.error:
                 #Close connection on fail and remove from connections list
                 user.socket.close()

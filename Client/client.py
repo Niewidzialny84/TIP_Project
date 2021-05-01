@@ -1,18 +1,22 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
-import threading
-import socket
-import argparse
-import os
-import sys
-import pyaudio
 import tkinter as tk
 from tkinter import messagebox
 from PyQt5.QtCore import QObject, QThread, pyqtSignal
+
+import os, sys
 sys.path.append(os.getcwd())
 from Utils.packer import *
-import traceback, sys, random, string
+import traceback, random, string
+import time
+
+import threading
+import socket
+import argparse
+import pyaudio
+
+import re
 
 messageBox = tk.Tk()
 messageBox.wm_withdraw()
@@ -45,11 +49,6 @@ class Client:
                 self.s.connect(self.address)
                 self.s.send(Packer.pack(Response.SEND_NICKNAME, name=self.nick))
                 
-                self.udp = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
-                self.udp.bind(("",0))
-                
-                self.s.send(Packer.pack(Response.CLIENT_PORT, port = self.udp.getsockname()[1]))       
-
                 """key, data = Packer.unpack(self.s.recv(1024))
                 if key == Response.SEND_NEW_USERS:
                     print('----HALO')
@@ -57,9 +56,15 @@ class Client:
                     for us in data["USERS"]:
                         print(us)
                         window.userList.addItem(us)"""
+
+                self.udp = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+                self.udp.bind(("",0))
+
+                self.s.send(Packer.pack(Response.CLIENT_PORT, port = self.udp.getsockname()[1]))  
                 break
             except:
                 print("Couldn't connect to server")
+                break
         
 
         chunk_size = 1024
@@ -74,8 +79,6 @@ class Client:
         print("Connected to Server")
 
         self.receive_thread = threading.Thread(target=self.receive_server_data).start()
-        # self.send_data_to_server()
-        self.send_thread = threading.Thread(target=self.send_data_to_server).start()
     
     def udpSend(self):
         while self.running:
@@ -85,6 +88,7 @@ class Client:
                     self.udp.sendto(data,self.address)
             except Exception as ex:
                 print(ex)
+                break
                 pass
 
     def udpRecive(self):
@@ -96,16 +100,25 @@ class Client:
     def receive_server_data(self):
         while self.running:
             try:
-                key, data = Packer.unpack(self.s.recv(1024))
-                if key == Response.SEND_NEW_USERS:
-                    window.userList.clear()
-                    for us in data["USERS"]:
-                        window.userList.addItem(us)
-                elif key == Response.SESSION:
-                    self.session = data['SESSION']
-                
+                recv = self.s.recv(1024)
+
+                #FIXME: Multiple packets in one
+                p = re.compile(r'(?<=\})(?=\{)')
+                slices = re.split(p, recv)
+                print(recv)
+                for x in slices:
+                    print(x)
+                    key, data = Packer.unpack(x)
+                    if key == Response.SEND_NEW_USERS:
+                        window.userList.clear()
+                        for us in data["USERS"]:
+                            window.userList.addItem(us)
+                    elif key == Response.SESSION:
+                        self.session = data['SESSION']
+
             except Exception as ex:
                 print(ex)
+                break
                 pass
 
     def disconnect(self):

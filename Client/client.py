@@ -58,6 +58,7 @@ class Client:
                         window.userList.addItem(us)"""
 
                 self.udp = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+                #self.udp.setsockopt(socket.SOL_SOCKET,socket.SO_SNDBUF, 1024)
                 self.udp.bind(("",0))
 
                 self.s.send(Packer.pack(Response.CLIENT_PORT, port = self.udp.getsockname()[1]))  
@@ -79,7 +80,10 @@ class Client:
         print("Connected to Server")
 
         self.receive_thread = threading.Thread(target=self.receive_server_data).start()
-    
+        self.udpSendThread = threading.Thread(target=self.udpSend).start()
+        self.udpReciveThread = threading.Thread(target=self.udpRecive).start()
+
+
     def udpSend(self):
         while self.running:
             try:
@@ -93,22 +97,22 @@ class Client:
 
     def udpRecive(self):
         while self.running:
-            recv = self.udp.recvfrom(1024)
-            self.playing_stream.write(recv[0])
-            
+            try:
+                recv = self.udp.recvfrom(2048)
+                self.playing_stream.write(recv[0])
+            except:
+                pass
 
     def receive_server_data(self):
         while self.running:
             try:
                 recv = self.s.recv(1024)
 
-                #FIXME: Multiple packets in one
                 p = re.compile(r'(?<=\})(?=\{)')
-                slices = re.split(p, recv)
-                print(recv)
+                slices = re.split(p, recv.decode())
+
                 for x in slices:
-                    print(x)
-                    key, data = Packer.unpack(x)
+                    key, data = Packer.unpack(x.encode())
                     if key == Response.SEND_NEW_USERS:
                         window.userList.clear()
                         for us in data["USERS"]:

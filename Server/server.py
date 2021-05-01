@@ -53,14 +53,17 @@ class Server(object):
 
         self.timezone = pytz.timezone('Europe/Warsaw')
 
-
+        
         try:
             #Binding adress and settings to socket
             self.sock = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
             self.sock.bind((self.ip,self.port))
 
             self.udp = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+            #self.udp.setsockopt(socket.SOL_SOCKET,socket.SO_SNDBUF, 1024)
+            #self.udp.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 1048576)
             self.udp.bind((self.ip,self.port))
+            self.udpThread = threading.Thread(target=self.handleUDP)
         except:
             self.log('Something went wrong on port bind')
         
@@ -73,7 +76,7 @@ class Server(object):
         self.sock.listen(50)
 
         #UDP thread
-        threading.Thread(target=self.handleUDP).start()
+        self.udpThread.start()
 
         #Awating loop for connections
         while self.running:
@@ -103,13 +106,12 @@ class Server(object):
                 #recive data
                 recv = user.socket.recv(1024)
                 #print(data)
-
-                #FIXME: Multiple packets in one
                 p = re.compile(r'(?<=\})(?=\{)')
-                slices = re.split(p, recv)
+                slices = re.split(p, recv.decode())
+
                 for x in slices:
                     #parse data
-                    key , data = Packer.unpack(data)
+                    key , data = Packer.unpack(x.encode())
 
                     #Nickname handling
                     if key == Response.SEND_NICKNAME:
@@ -135,14 +137,15 @@ class Server(object):
 
         while self.running:
             try:
-                recv = self.udp.recvfrom(1024)
+                recv = self.udp.recvfrom(2048)
                 self.sendBroadcastUDP(recv[0],recv[1])
-            except socket.error:
+            except socket.error as ex:
+                print(ex)
                 pass
 
     def sendBroadcastUDP(self,data,exclude):
         for user in self.connections:
-            if user.UDP != exclude or user.UDP != None:
+            if user.UDP != exclude and user.UDP != None:
                 try:
                     self.udp.sendto(data,user.UDP)
                 except:

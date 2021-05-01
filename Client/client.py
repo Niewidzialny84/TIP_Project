@@ -30,26 +30,33 @@ class Client:
         
         self.running = True
         self.nick = nick
-        self.mute = True
+        self.mute = False
 
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         
+        self.session = None
+
         while 1:
             try:
-                # self.target_ip = input('Enter IP address of server --> ')
-                # self.target_port = int(input('Enter target port of server --> '))
                 self.target_ip = ipFromClient
                 self.target_port = portFromClient
+                self.address = (self.target_ip,self.target_port)
 
-                self.s.connect((self.target_ip, self.target_port))
+                self.s.connect(self.address)
                 self.s.send(Packer.pack(Response.SEND_NICKNAME, name=self.nick))
-                key, data = Packer.unpack(self.s.recv(1024))
+                
+                self.udp = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+                self.udp.bind(("",0))
+                
+                self.s.send(Packer.pack(Response.CLIENT_PORT, port = self.udp.getsockname()[1]))       
+
+                """key, data = Packer.unpack(self.s.recv(1024))
                 if key == Response.SEND_NEW_USERS:
                     print('----HALO')
                     window.userList.clear()
                     for us in data["USERS"]:
                         print(us)
-                        window.userList.addItem(us)
+                        window.userList.addItem(us)"""
                 break
             except:
                 print("Couldn't connect to server")
@@ -69,6 +76,22 @@ class Client:
         self.receive_thread = threading.Thread(target=self.receive_server_data).start()
         # self.send_data_to_server()
         self.send_thread = threading.Thread(target=self.send_data_to_server).start()
+    
+    def udpSend(self):
+        while self.running:
+            try:
+                if self.mute:
+                    data = self.recording_stream.read(1024)
+                    self.udp.sendto(data,self.address)
+            except Exception as ex:
+                print(ex)
+                pass
+
+    def udpRecive(self):
+        while self.running:
+            recv = self.udp.recvfrom(1024)
+            self.playing_stream.write(recv[0])
+            
 
     def receive_server_data(self):
         while self.running:
@@ -78,20 +101,9 @@ class Client:
                     window.userList.clear()
                     for us in data["USERS"]:
                         window.userList.addItem(us)
-                else:
-                    self.playing_stream.write(data)
-            except Exception as ex:
-                print(ex)
-                pass
-
-
-    def send_data_to_server(self):
-        # while self.mute:
-        while self.running:
-            try:
-                # if self.mute:
-                data = self.recording_stream.read(1024)
-                self.s.send(data)
+                elif key == Response.SESSION:
+                    self.session = data['SESSION']
+                
             except Exception as ex:
                 print(ex)
                 pass
@@ -99,6 +111,8 @@ class Client:
     def disconnect(self):
         self.s.send(Packer.pack(Response.DISCONNECT, reason = "Quit"))
         self.running = False
+        self.s.close()
+        self.udp.close()
         
 class Window(QMainWindow):
     def __init__(self,*args,**kwargs):
@@ -141,7 +155,7 @@ class Window(QMainWindow):
         self.mainMenuW.setLayout(mainMenu)
 
         self.muteButton = QPushButton()
-        self.muteButton.setText("Mute")
+        self.muteButton.setText("Unmute")
         self.muteButton.clicked.connect(self.muteButtonClicked)
 
         self.userList = QListWidget()
@@ -180,7 +194,7 @@ class Window(QMainWindow):
                 raise invalidNick
         except invalidNick:
             self.titletext.setText("Invalid nick")
-            messagebox.showinfo("Error", "Nick must be shorter than 20 characters and must consist of ASCII signs")
+            messagebox.showinfo("Error", "Nick must be shorter than 20 characters")
             # tk.messagebox.showinfo("Error", "Nick must be shorter than 20 characters and must consist of ASCII signs")
         except Exception as ex:
             self.titletext.setText("Error with connection")
@@ -190,7 +204,6 @@ class Window(QMainWindow):
             self.client.mute = False
             self.muteButton.setText("Unmute")
         else:
-            # self.client.send_thread.start()
             self.client.mute = True
             self.muteButton.setText("Mute")
         

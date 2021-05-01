@@ -22,6 +22,9 @@ class ConnectedUser(object):
         #Assign Unique Identifier
         self.id = None
 
+        #UDP connection address
+        self.UDP = None
+
         for i in range(1000):
             if not ConnectedUser.current_ids.issuperset(set([i])):
                 self.id = i
@@ -48,11 +51,14 @@ class Server(object):
 
         self.timezone = pytz.timezone('Europe/Warsaw')
 
+
         try:
             #Binding adress and settings to socket
             self.sock = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
             self.sock.bind((self.ip,self.port))
 
+            self.udp = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+            self.udp.bind((self.ip,self.port))
         except:
             self.log('Something went wrong on port bind')
         
@@ -64,6 +70,9 @@ class Server(object):
 
         self.sock.listen(50)
 
+        #UDP thread
+        threading.Thread(target=self.handleUDP).start()
+
         #Awating loop for connections
         while self.running:
             self.log('Awaiting more connections...')
@@ -71,29 +80,39 @@ class Server(object):
                 connection, address = self.sock.accept()
 
                 self.log(str(address) + ' connected')
+
                 user = ConnectedUser(connection,address)
+
                 self.connections.append(user)
                 #Creating new thread for every client
-                threading.Thread(target=self.handle,args=(user,)).start()
+                threading.Thread(target=self.handleTCP,args=(user,)).start()
             except WindowsError:
                 pass
             except Exception as err:
                 self.log('Some error occured ' + str(err))
                 pass
 
-    def handle(self, user: ConnectedUser):
+    def handleTCP(self, user: ConnectedUser):
+        """TCP data handling for each client"""
+
         while self.running and user.connected:
             try:
-                #Data handling
-                #FIXME: Add more info into packets and split incoming data
+                #recive data
                 data = user.socket.recv(1024)
 
+                #parse data
                 key , data = Packer.unpack(data)
+
+                #Nickname handling
                 if key == Response.SEND_NICKNAME:
                     user.name = data['NAME']
                     self.sendAll(Packer.pack(Response.SEND_NEW_USERS,users=self.userList()))
+                    self.send(user.socket,Packer.pack(Response.SESSION,session=user.id))
+                #Client disconnect packet handling
                 elif key == Response.DISCONNECT:
                     raise socket.error('User disconnected')
+                elif key == Response.CLIENT_PORT:
+                    user.UDP = (user.socket.getsockname()[0],data['PORT'])
                 else:
                     self.sendBroadcast(user.socket,data)
             except socket.error:
@@ -104,6 +123,25 @@ class Server(object):
                 self.connections.remove(user)
                 
                 self.sendAll(Packer.pack(Response.SEND_NEW_USERS,users=self.userList()))
+    
+    def handleUDP(self):
+        """Broadcast pass on udp"""
+
+        while self.running:
+            try:
+                recv = self.udp.recvfrom(1024)
+                self.sendBroadcastUDP(recv[0],recv[1])
+            except socket.error:
+                pass
+
+    def sendBroadcastUDP(self,data,exclude):
+        for user in self.connections:
+            if user.UDP != exclude or user.UDP != None:
+                try:
+                    self.udp.sendto(data,user.UDP)
+                except:
+                    pass
+
 
     def send(self,connection,data):
         try:
@@ -141,6 +179,7 @@ class Server(object):
     def stop(self):
         self.running = False
         self.sock.close()
+        self.udp.close()
 
 class ConsoleApp(object):
     def __init__(self, port: int):
@@ -162,6 +201,7 @@ class ConsoleApp(object):
             if val == 'STOP':
                 self.server.log('Stopping server...')
                 self.server.stop()
+                self.thread.join()
                 break
             elif val == 'LIST':
                 self.server.log('Getting current user list')

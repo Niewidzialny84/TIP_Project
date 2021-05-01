@@ -30,6 +30,23 @@ class PackerTests(unittest.TestCase):
         self.assertEqual(key, Response.SEND_NEW_USERS)
         self.assertEqual(data['USERS'], ['Adam','Julie','George'])
 
+    def test_SessionPacket(self):
+        p = Packer.pack(Response.SESSION,session=1)
+        self.assertEqual(p, b'{"KEY": 6, "SESSION": 1}')
+
+        key, data = Packer.unpack(p)
+        self.assertEqual(key, Response.SESSION)
+        self.assertEqual(data['SESSION'], 1)
+
+    def test_PortPacket(self):
+        p = Packer.pack(Response.CLIENT_PORT,port=9999)
+        self.assertEqual(p, b'{"KEY": 7, "PORT": 9999}')
+
+        key, data = Packer.unpack(p)
+        self.assertEqual(key, Response.CLIENT_PORT)
+        self.assertEqual(data['PORT'], 9999)
+
+    @unittest.skip('invalid')
     def test_NamePacketSend(self):
         try:
             clientsock = socket.socket(socket.AF_INET,socket.SOCK_STREAM)

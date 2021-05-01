@@ -1,15 +1,17 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
-import tkinter as tk
-from tkinter import messagebox
 from PyQt5.QtCore import QObject, QThread, pyqtSignal
 
+import tkinter as tk
+from tkinter import messagebox
+
 import os, sys
-sys.path.append(os.getcwd())
-from Utils.packer import *
 import traceback, random, string
 import time
+
+sys.path.append(os.getcwd())
+from Utils.packer import *
 
 import threading
 import socket
@@ -48,25 +50,17 @@ class Client:
 
                 self.s.connect(self.address)
                 self.s.send(Packer.pack(Response.SEND_NICKNAME, name=self.nick))
-                
-                """key, data = Packer.unpack(self.s.recv(1024))
-                if key == Response.SEND_NEW_USERS:
-                    print('----HALO')
-                    window.userList.clear()
-                    for us in data["USERS"]:
-                        print(us)
-                        window.userList.addItem(us)"""
 
-                self.udp = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
-                #self.udp.setsockopt(socket.SOL_SOCKET,socket.SO_SNDBUF, 1024)
-                self.udp.bind(("",0))
-
-                self.s.send(Packer.pack(Response.CLIENT_PORT, port = self.udp.getsockname()[1]))  
                 break
             except:
                 print("Couldn't connect to server")
                 break
         
+
+        self.udp = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+        self.udp.bind(("",0))
+
+        self.s.send(Packer.pack(Response.CLIENT_PORT, port = self.udp.getsockname()[1]))  
 
         chunk_size = 1024
         audio_format = pyaudio.paInt16
@@ -162,7 +156,7 @@ class Window(QMainWindow):
         mainMenu.setAlignment(Qt.AlignCenter)
         mainMenu.addWidget(self.titletext)
         mainMenu.addWidget(self.addressField)
-        mainMenu.addWidget(self.portField)
+        #mainMenu.addWidget(self.portField)
         mainMenu.addWidget(self.nickField)
         mainMenu.addWidget(confirmButton)
 
@@ -193,28 +187,19 @@ class Window(QMainWindow):
         self.client = None
 
     def confirmButtonClicked(self):
-        try:
-            if len(self.nickField.text()) <= 20:
-                self.setCentralWidget(self.secondMenuW)
-                self.nickName.setText("Welcome " + self.nickField.text())
-                self.nickName.setAlignment(Qt.AlignCenter)
-                self.nickName.setFont(QFont('Impact',32))
-                colorText = QColor('#05d9e8')
-                self.nickName.setStyleSheet("QLabel { color: colorText; }")
-                # self.userList.addItem(self.nickField.text())
+        
+        ip,port = self.validateAddress()
+        if self.validateName() and ip != None and port != None:
+            self.setCentralWidget(self.secondMenuW)
+            self.nickName.setText("Welcome " + self.nickField.text())
+            self.nickName.setAlignment(Qt.AlignCenter)
+            self.nickName.setFont(QFont('Impact',32))
+            colorText = QColor('#05d9e8')
+            self.nickName.setStyleSheet("QLabel { color: colorText; }")
 
-                self.client = Client(self.addressField.text(), int(self.portField.text()), self.nickField.text())
+            self.client = Client(ip, port, self.nickField.text())
 
-                # users = self.client.returnList()
-                # print(users)
-            else:
-                raise invalidNick
-        except invalidNick:
-            self.titletext.setText("Invalid nick")
-            messagebox.showinfo("Error", "Nick must be shorter than 20 characters")
-            # tk.messagebox.showinfo("Error", "Nick must be shorter than 20 characters and must consist of ASCII signs")
-        except Exception as ex:
-            self.titletext.setText("Error with connection")
+        
 
     def muteButtonClicked(self):
         if self.muteButton.text() == "Mute":
@@ -232,6 +217,32 @@ class Window(QMainWindow):
                 self.client.disconnect()
         else:
             event.ignore()
+
+    def validateName(self):
+        if len(self.nickField.text()) >= 20 or self.nickField.text() == '':
+            self.titletext.setText("Invalid nick")
+            #messageBox.showinfo('Error','Nick must be shorter than 20 characters')
+            return False
+        return True
+
+    def validateAddress(self):
+        try:
+            addr = self.addressField.text()
+            addr = addr.split(sep=':')
+            ip = addr[0]
+            port = int(addr[1])
+
+            reg = r'^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$'
+
+            if port > 0 and port <= 65535 and re.match(reg,ip):
+                return ip, port
+        except:
+            pass
+        
+        self.titletext.setText("Invalid address")
+        #messageBox.showerror('Error','Invalid address')
+
+        return None,None
 
 
     

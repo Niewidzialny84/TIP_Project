@@ -42,12 +42,12 @@ class ConnectedUser(object):
         return 'ID='+str(self.id)+' ADDR='+str(self.address)+' NAME='+str(self.name)+' STATUS='+str(self.connected)+ ' UDP='+str(self.UDP)
 
 class Server(object):
-    def __init__(self,port):
+    def __init__(self,port: int):
         #This should get ip address of the card
         #self.ip = socket.gethostbyname(socket.gethostname())
 
         #This should make run socket on all interfaces
-        self.ip = ""
+        self.ip = "0.0.0.0"
         self.port = port
         self.running = True
 

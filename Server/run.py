@@ -6,13 +6,11 @@ if __name__ == '__main__':
     #ipaddr = getenv('IP')
     port = getenv('PORT')
 
-    #temporary hard code port
-    #FIXME: Remove or comment on deploy
-    port = 9999
-
     if port is None:
         if len(argv) == 2:
-            port = argv[1]
+            port = int(argv[1])
+        elif len(argv) <= 1:
+            port = 9999
         else:
             print('Missing argument or too many')
 

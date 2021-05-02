@@ -46,6 +46,8 @@ class Packer(object):
                 package = {'KEY':key.value,'PORT': port}
             else:
                 raise TypeError('--Pack-- Missing client port')
+        elif key == Response.SERVER_CLOSE:
+            package = {'KEY':key.value}
         
         package = json.dumps(package)
         return package.encode(encoding='ASCII')

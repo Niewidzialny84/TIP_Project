@@ -92,7 +92,6 @@ class Server(object):
                 #Creating new thread for every client
                 threading.Thread(target=self.handleTCP,args=(user,)).start()
             except WindowsError as err:
-                self.log('WinErr' + str(err))
                 pass
             except Exception as err:
                 self.log('Some error occured ' + str(err))
@@ -140,7 +139,6 @@ class Server(object):
                 recv = self.udp.recvfrom(2048)
                 self.sendBroadcastUDP(recv[0],recv[1])
             except socket.error as ex:
-                print(ex)
                 pass
 
     def sendBroadcastUDP(self,data,exclude):
@@ -186,6 +184,7 @@ class Server(object):
         print(t + str(message))
 
     def stop(self):
+        self.sendAll(Packer.pack(Response.SERVER_CLOSE))
         self.running = False
         self.sock.close()
         self.udp.close()

@@ -113,6 +113,9 @@ class Client:
                             window.userList.addItem(us)
                     elif key == Response.SESSION:
                         self.session = data['SESSION']
+                    elif key == Response.SERVER_CLOSE:
+                        self.disconnect()
+                        window.disconnectButtonClicked()
 
             except Exception as ex:
                 print(ex)

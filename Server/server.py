@@ -137,7 +137,8 @@ class Server(object):
         while self.running:
             try:
                 recv = self.udp.recvfrom(2048)
-                self.sendBroadcastUDP(recv[0],recv[1])
+                if self.validReciever(recv[1]):
+                    self.sendBroadcastUDP(recv[0],recv[1])
             except socket.error as ex:
                 pass
 
@@ -148,7 +149,12 @@ class Server(object):
                     self.udp.sendto(data,user.UDP)
                 except:
                     pass
-
+    
+    def validReciever(self, addr):
+        for user in self.connections:
+            if user.UDP == addr:
+                return True
+        return False
 
     def send(self,connection,data):
         try:

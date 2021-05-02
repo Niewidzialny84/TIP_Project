@@ -53,7 +53,7 @@ class Client:
 
                 break
             except:
-                print("Couldn't connect to server")
+                raise Error
                 break
         
 
@@ -129,24 +129,24 @@ class Window(QMainWindow):
     def __init__(self,*args,**kwargs):
         super(Window,self).__init__(*args,**kwargs) 
         self.setWindowTitle("TIP Communicator")
-        self.setFixedWidth(800)
+        self.setFixedWidth(400)
         self.setFixedHeight(600)
+        self.setStyleSheet('QMainWindow {background-color: #e4e3e3;} QMessageBox {background-color: #e4e3e3;color: #204051;} QListWidget::item:selected { background-color: #e4e3e3; color: #204051; } QLabel { color: #204051; } QLineEdit {background-color: #84a9ac; border: 1px solid #3b6978} QPushButton {background-color: #84a9ac;color: #204051;border: 1px solid #3b6978; min-height:20px;min-width:50px}')
+        self.setAutoFillBackground(True)
 
+        self.BigFont = QFont('Impact',28)
+        
         self.titletext = QLabel()
-        self.titletext.setText("Welcome in TIP Communicator")
+        self.titletextText = "Voice Communicator"
+        self.titletext.setText(self.titletextText)
         self.titletext.setAlignment(Qt.AlignCenter)
-        self.titletext.setFont(QFont('Impact',32))
-        colorText = QColor('#05d9e8')
-        self.titletext.setStyleSheet("QLabel { color: colorText; }")
+        self.titletext.setFont(self.BigFont)
 
         self.addressField = QLineEdit()
         self.addressField.setPlaceholderText("IP Address")
 
-        self.portField = QLineEdit()
-        self.portField.setPlaceholderText("Port Number")
-
         self.nickField = QLineEdit()
-        self.nickField.setPlaceholderText("Nick")
+        self.nickField.setPlaceholderText("Nickname")
 
         confirmButton = QPushButton()
         confirmButton.setText("Confirm")
@@ -156,20 +156,24 @@ class Window(QMainWindow):
         mainMenu.setAlignment(Qt.AlignCenter)
         mainMenu.addWidget(self.titletext)
         mainMenu.addWidget(self.addressField)
-        #mainMenu.addWidget(self.portField)
         mainMenu.addWidget(self.nickField)
         mainMenu.addWidget(confirmButton)
 
-        colorBack = QColor('#01012b')
-        self.setStyleSheet("background-color: colorBack;")
         self.mainMenuW = QWidget()
         self.mainMenuW.setLayout(mainMenu)
 
+        #Second Window
+
         self.muteButton = QPushButton()
-        self.muteButton.setText("Unmute")
+        self.muteButton.setText("Unmute Microphone")
         self.muteButton.clicked.connect(self.muteButtonClicked)
 
+        self.disconnectButton = QPushButton()
+        self.disconnectButton.setText('Disconnect')
+        self.disconnectButton.clicked.connect(self.disconnectButtonClicked)
+
         self.userList = QListWidget()
+        self.userList.setStyleSheet('color: #204051; background-color: #84a9ac; border: 1px solid #3b6978')
 
         self.nickName = QLabel()
 
@@ -178,39 +182,48 @@ class Window(QMainWindow):
         secondMenu.addWidget(self.userList)
         secondMenu.setAlignment(Qt.AlignCenter)
         secondMenu.addWidget(self.muteButton)
+        secondMenu.addWidget(self.disconnectButton)
 
         self.secondMenuW = QWidget()
         self.secondMenuW.setLayout(secondMenu)
 
-        self.setCentralWidget(self.mainMenuW)
-
         self.client = None
+
+        self.Stack = QStackedWidget(self)
+        self.Stack.addWidget(self.mainMenuW)
+        self.Stack.addWidget(self.secondMenuW)
+        self.setCentralWidget(self.Stack)
 
     def confirmButtonClicked(self):
         
         ip,port = self.validateAddress()
         if self.validateName() and ip != None and port != None:
-            self.setCentralWidget(self.secondMenuW)
-            self.nickName.setText("Welcome " + self.nickField.text())
-            self.nickName.setAlignment(Qt.AlignCenter)
-            self.nickName.setFont(QFont('Impact',32))
-            colorText = QColor('#05d9e8')
-            self.nickName.setStyleSheet("QLabel { color: colorText; }")
-
-            self.client = Client(ip, port, self.nickField.text())
-
+            self.nickName.setText("Joined as: " + self.nickField.text())
+            self.nickName.setAlignment(Qt.AlignLeft)
+            self.nickName.setFont(self.BigFont)
+            try:
+                self.client = Client(ip, port, self.nickField.text())
+                self.titletext.setText(self.titletextText)
+                self.Stack.setCurrentIndex(1)
+            except Error:
+                self.titletext.setText("Cannot connect")
+                pass
         
+    def disconnectButtonClicked(self):
+        self.Stack.setCurrentIndex(0)
+        self.client.disconnect()
+        self.client = None
 
     def muteButtonClicked(self):
-        if self.muteButton.text() == "Mute":
+        if self.muteButton.text() == "Mute Microphone":
             self.client.mute = False
-            self.muteButton.setText("Unmute")
+            self.muteButton.setText("Unmute Microphone")
         else:
             self.client.mute = True
-            self.muteButton.setText("Mute")
+            self.muteButton.setText("Mute Microphone")
         
     def closeEvent(self, event):
-        close = QMessageBox.question(self, "QUIT", "Are you sure want to stop process?", QMessageBox.Yes | QMessageBox.No)
+        close = QMessageBox.question(self, "QUIT", "Are you sure want to quit?", QMessageBox.Yes | QMessageBox.No)
         if close == QMessageBox.Yes:
             event.accept()
             if self.client != None:
@@ -249,7 +262,6 @@ class Window(QMainWindow):
 app = QApplication(sys.argv)
 
 window = Window()
-window.setStyleSheet("background-color: rgb(245,245,220);")
 window.show()
 
 app.exec_()

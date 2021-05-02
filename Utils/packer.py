@@ -8,6 +8,8 @@ class Response(Enum):
     SEND_NEW_USERS = 3
     DISCONNECT = 4
     SERVER_CLOSE = 5
+    SESSION = 6
+    CLIENT_PORT = 7
 
 
 class Packer(object):
@@ -32,7 +34,21 @@ class Packer(object):
         elif key == Response.DISCONNECT:
             reason = kwargs.get('reason',None)
             package = {'KEY':key.value,'REASON': reason}
-
+        elif key == Response.SESSION:
+            session = kwargs.get('session',None)
+            if session != None:
+                package = {'KEY':key.value,'SESSION': session}
+            else:
+                raise TypeError('--Pack-- Missing session ID')
+        elif key == Response.CLIENT_PORT:
+            port = kwargs.get('port',None)
+            if port != None:
+                package = {'KEY':key.value,'PORT': port}
+            else:
+                raise TypeError('--Pack-- Missing client port')
+        elif key == Response.SERVER_CLOSE:
+            package = {'KEY':key.value}
+        
         package = json.dumps(package)
         return package.encode(encoding='ASCII')
 

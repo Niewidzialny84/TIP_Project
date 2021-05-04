@@ -136,7 +136,7 @@ class Server(object):
 
         while self.running:
             try:
-                recv = self.udp.recvfrom(2048)
+                recv = self.udp.recvfrom(1024)
                 if self.validReciever(recv[1]):
                     self.sendBroadcastUDP(recv[0],recv[1])
             except socket.error as ex:

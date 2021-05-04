@@ -61,8 +61,9 @@ class Client:
         self.udp.bind(("",0))
 
         self.s.send(Packer.pack(Response.CLIENT_PORT, port = self.udp.getsockname()[1]))  
+        self.udp.sendto(('a'*1024).encode(),self.address)
 
-        chunk_size = 1024
+        chunk_size = 512
         audio_format = pyaudio.paInt16
         channels = 1
         rate = 20000
@@ -82,7 +83,7 @@ class Client:
         while self.running:
             try:
                 if self.mute:
-                    data = self.recording_stream.read(1024)
+                    data = self.recording_stream.read(512)
                     self.udp.sendto(data,self.address)
             except Exception as ex:
                 print(ex)
@@ -92,7 +93,7 @@ class Client:
     def udpRecive(self):
         while self.running:
             try:
-                recv = self.udp.recvfrom(2048)
+                recv = self.udp.recvfrom(1024)
                 self.playing_stream.write(recv[0])
             except:
                 pass

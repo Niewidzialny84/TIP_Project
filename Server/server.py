@@ -121,7 +121,7 @@ class Server(object):
                     elif key == Response.DISCONNECT:
                         raise socket.error('User disconnected')
                     elif key == Response.CLIENT_PORT:
-                        user.UDP = (user.socket.getsockname()[0],data['PORT'])
+                        user.UDP = (user.address[0],data['PORT'])
             except socket.error:
                 #Close connection on fail and remove from connections list
                 user.socket.close()

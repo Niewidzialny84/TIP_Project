@@ -133,7 +133,7 @@ class Window(QMainWindow):
     def __init__(self,*args,**kwargs):
         super(Window,self).__init__(*args,**kwargs) 
         self.setWindowTitle("TIP Communicator")
-        self.setFixedWidth(400)
+        self.setFixedWidth(500)
         self.setFixedHeight(600)
         self.setStyleSheet('QMainWindow {background-color: #e4e3e3;} QMessageBox {background-color: #e4e3e3;color: #204051;} QListWidget::item:selected { background-color: #e4e3e3; color: #204051; } QLabel { color: #204051; } QLineEdit {background-color: #84a9ac; border: 1px solid #3b6978} QPushButton {background-color: #84a9ac;color: #204051;border: 1px solid #3b6978; min-height:20px;min-width:50px}')
         self.setAutoFillBackground(True)
